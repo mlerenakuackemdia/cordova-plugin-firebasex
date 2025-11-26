@@ -135,6 +135,10 @@ module.exports = function(context){
             androidHelper.applyPluginToAppGradle(PLATFORM.ANDROID.performanceGradlePlugin.pluginDef);
         }
 
+        // Add Crashlytics gradle plugin (required for firebase-crashlytics 19.x+)
+        androidHelper.addDependencyToRootGradle("com.google.firebase:firebase-crashlytics-gradle:3.0.6");
+        androidHelper.applyPluginToAppGradle("com.google.firebase.crashlytics");
+
         // Add tools namespace to manifest
         if(fs.existsSync(path.resolve(PLATFORM.ANDROID.manifestXml))){
             const manifestContents = fs.readFileSync(path.resolve(PLATFORM.ANDROID.manifestXml)).toString();
