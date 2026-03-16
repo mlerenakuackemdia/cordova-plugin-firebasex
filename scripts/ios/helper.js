@@ -239,6 +239,9 @@ post_install do |installer|
             if target.respond_to?(:product_type) and target.product_type == "com.apple.product-type.bundle"
                 config.build_settings['CODE_SIGNING_ALLOWED'] = 'NO'
             end
+            if ['gRPC-Core', 'gRPC-C++', 'abseil'].include?(target.name)
+                config.build_settings['OTHER_CPLUSPLUSFLAGS'] = '$(inherited) -Wno-missing-template-arg-list-after-template-kw'
+            end
         end
          if target.name == 'BoringSSL-GRPC'
               target.source_build_phase.files.each do |file|
