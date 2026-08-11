@@ -601,6 +601,7 @@ public class FirebasePlugin extends CordovaPlugin {
     @Override
     public void onDestroy() {
         FirebaseAuth.getInstance().removeAuthStateListener(authStateListener);
+        FirebaseAuth.getInstance().removeIdTokenListener(idTokenListener);
         instance = null;
         cordovaActivity = null;
         cordovaInterface = null;
@@ -4039,11 +4040,20 @@ public class FirebasePlugin extends CordovaPlugin {
     private static class IdTokenListener implements FirebaseAuth.IdTokenListener {
         @Override
         public void onIdTokenChanged(@NonNull FirebaseAuth firebaseAuth) {
+            // El listener puede dispararse con el plugin ya destruido (Firebase Auth
+            // refresca el token con timers propios): sin instance no hay WebView que
+            // notificar y cualquier acceso es NPE fatal.
+            if (FirebasePlugin.instance == null) return;
             try {
                 FirebaseUser user = firebaseAuth.getCurrentUser();
+                if (user == null) {
+                    FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange()");
+                    return;
+                }
                 user.getIdToken(true).addOnSuccessListener(new OnSuccessListener<GetTokenResult>() {
                     @Override
                     public void onSuccess(GetTokenResult result) {
+                        if (FirebasePlugin.instance == null) return;
                         try {
                             String idToken = result.getToken();
                             if (idToken != null && idToken.equals(instance.currentIdToken)) {
@@ -4053,18 +4063,23 @@ public class FirebasePlugin extends CordovaPlugin {
                             String providerId = result.getSignInProvider();
                             FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange({\"idToken\":\"" + idToken + "\",\"providerId\":\"" + providerId + "\"})");
                         } catch (Exception e) {
-                            FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange()");
+                            if (FirebasePlugin.instance != null) {
+                                FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange()");
+                            }
                         }
                     }
 
                 }).addOnFailureListener(new OnFailureListener() {
                     @Override
                     public void onFailure(@NonNull Exception e) {
+                        if (FirebasePlugin.instance == null) return;
                         FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange()");
                     }
                 });
             } catch (Exception e) {
-                FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange()");
+                if (FirebasePlugin.instance != null) {
+                    FirebasePlugin.instance.executeGlobalJavascript(JS_GLOBAL_NAMESPACE + "_onAuthIdTokenChange()");
+                }
             }
         }
     }
