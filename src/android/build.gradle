@@ -1,30 +1,9 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath "com.android.tools.build:gradle:${cordovaConfig.AGP_VERSION}"
-        classpath "com.google.gms:google-services:${cordovaConfig.GRADLE_PLUGIN_GOOGLE_SERVICES_VERSION}"
-    }
-}
+// Google Services plugin is now handled natively by cordova-android 15+
+// via GradlePluginGoogleServicesEnabled and GradlePluginGoogleServicesVersion preferences.
+// See app/build.gradle lines 51-61 and 407-408.
 repositories {
     mavenCentral()
     maven {
         url "https://maven.google.com"
     }
 }
-
-cdvPluginPostBuildExtras.add({
-    afterEvaluate {
-        rootProject.subprojects {
-            if (name == "app") {
-                if (!plugins.hasPlugin('com.google.gms.google-services')) {
-                    apply plugin: com.google.gms.googleservices.GoogleServicesPlugin
-                }
-            }
-        }
-    }
-})
-
-
